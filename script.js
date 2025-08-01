@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Encode message for URL
             const encodedMessage = encodeURIComponent(whatsappMessage);
-            const whatsappURL = `https://wa.me/919876543210?text=${encodedMessage}`;
+            const whatsappURL = `https://wa.me/919515397690?text=${encodedMessage}`;
 
             // Show success message
             alert('Thank you for your message! You will be redirected to WhatsApp to complete your inquiry.');
@@ -128,18 +128,14 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(el);
     });
 
-    // Map placeholder click handler
-    const mapPlaceholders = document.querySelectorAll('.map-placeholder, .map-placeholder-large');
-    mapPlaceholders.forEach(placeholder => {
-        placeholder.addEventListener('click', function() {
-            const address = 'Khaman to bus stand road, Karimnagar';
-            const googleMapsURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    // Map iframe click handler (if needed for fallback)
+    const mapIframes = document.querySelectorAll('iframe[src*="google.com/maps"]');
+    mapIframes.forEach(iframe => {
+        iframe.addEventListener('click', function() {
+            // Google Maps link for the business
+            const googleMapsURL = 'https://maps.app.goo.gl/PPKEPtSCzc2Fjhmz6';
             window.open(googleMapsURL, '_blank');
         });
-        
-        // Add cursor pointer style
-        placeholder.style.cursor = 'pointer';
-        placeholder.title = 'Click to open in Google Maps';
     });
 
     // Phone number formatting
