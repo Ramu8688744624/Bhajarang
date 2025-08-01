@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', function() {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Get the submit button
+            const submitBtn = contactForm.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitBtn.disabled = true;
+            
             // Get form data
             const formData = new FormData(contactForm);
             const name = formData.get('name');
@@ -44,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Basic validation
             if (!name || !phone || !message) {
                 alert('Please fill in all required fields.');
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
                 return;
             }
 
@@ -51,6 +62,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const phoneRegex = /^[6-9]\d{9}$/;
             if (!phoneRegex.test(phone.replace(/\D/g, '').slice(-10))) {
                 alert('Please enter a valid 10-digit phone number.');
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
                 return;
             }
 
@@ -66,14 +80,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappURL = `https://wa.me/919515397690?text=${encodedMessage}`;
 
-            // Show success message
-            alert('Thank you for your message! You will be redirected to WhatsApp to complete your inquiry.');
-            
-            // Open WhatsApp
-            window.open(whatsappURL, '_blank');
-            
-            // Reset form
-            contactForm.reset();
+            // Simulate processing time then redirect
+            setTimeout(() => {
+                // Show success message
+                alert('Thank you for your message! You will be redirected to WhatsApp to complete your inquiry.');
+                
+                // Open WhatsApp
+                window.open(whatsappURL, '_blank');
+                
+                // Reset form and button
+                contactForm.reset();
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 1500);
         });
     }
 
@@ -150,22 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add loading state to buttons
-    const submitButtons = document.querySelectorAll('.submit-btn, .cta-button');
-    submitButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.classList.contains('submit-btn')) {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                this.disabled = true;
-                
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 2000);
-            }
-        });
-    });
+    // Loading state is now handled within the form submission handler
 
     // Add hover effects to cards
     const cards = document.querySelectorAll('.service-card, .reason-card, .feature');
