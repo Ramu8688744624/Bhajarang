@@ -248,6 +248,19 @@ body {
     margin-bottom: 20px;
 }
 
+.service-icon-home {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px auto;
+    background: #fef2f2;
+    border-radius: 50%;
+    padding: 10px;
+}
+
 .service-card h3 {
     font-size: 1.3rem;
     margin-bottom: 15px;
