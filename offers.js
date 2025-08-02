@@ -5,23 +5,36 @@ class OffersManager {
         this.init();
     }
 
-    init() {
-        this.loadOffers();
+    async init() {
+        await this.loadOffers();
         this.renderOffers();
     }
 
-    loadOffers() {
+    async loadOffers() {
         try {
-            const storedOffers = localStorage.getItem('bhajarang_offers');
-            this.offers = storedOffers ? JSON.parse(storedOffers) : [];
+            // Check if we're on live site (has domain) or local (file:// or localhost)
+            const isLive = window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
             
-            // Add sample offers if none exist (for demo purposes)
-            if (this.offers.length === 0) {
-                this.addSampleOffers();
+            if (isLive) {
+                // Live site - use Vercel API
+                const response = await fetch('/api/offers');
+                const data = await response.json();
+                this.offers = data.offers || [];
+            } else {
+                // Local development - use localStorage
+                const storedOffers = localStorage.getItem('bhajarang_offers');
+                this.offers = storedOffers ? JSON.parse(storedOffers) : [];
+                
+                // Add sample offers if none exist (for demo purposes)
+                if (this.offers.length === 0) {
+                    this.addSampleOffers();
+                }
             }
         } catch (error) {
             console.error('Error loading offers:', error);
-            this.offers = [];
+            // Fallback to localStorage
+            const storedOffers = localStorage.getItem('bhajarang_offers');
+            this.offers = storedOffers ? JSON.parse(storedOffers) : [];
         }
     }
 

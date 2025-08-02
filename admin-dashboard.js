@@ -6,9 +6,9 @@ class AdminDashboard {
         this.init();
     }
 
-    init() {
+    async init() {
         this.checkAuth();
-        this.loadOffers();
+        await this.loadOffers();
         this.setupEventListeners();
         this.renderOffers();
     }
@@ -65,23 +65,60 @@ class AdminDashboard {
         });
     }
 
-    loadOffers() {
+    async loadOffers() {
         try {
-            const storedOffers = localStorage.getItem('bhajarang_offers');
-            this.offers = storedOffers ? JSON.parse(storedOffers) : [];
+            // Check if we're on live site (has domain) or local (file:// or localhost)
+            const isLive = window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
+            
+            if (isLive) {
+                // Live site - use Vercel API
+                const response = await fetch('/api/offers');
+                const data = await response.json();
+                this.offers = data.offers || [];
+            } else {
+                // Local development - use localStorage
+                const storedOffers = localStorage.getItem('bhajarang_offers');
+                this.offers = storedOffers ? JSON.parse(storedOffers) : [];
+            }
         } catch (error) {
             console.error('Error loading offers:', error);
-            this.offers = [];
+            // Fallback to localStorage
+            const storedOffers = localStorage.getItem('bhajarang_offers');
+            this.offers = storedOffers ? JSON.parse(storedOffers) : [];
         }
     }
 
-    saveOffers() {
+    async saveOffers() {
         try {
-            localStorage.setItem('bhajarang_offers', JSON.stringify(this.offers));
-            this.showMessage('Offers updated successfully!', 'success');
+            // Check if we're on live site (has domain) or local (file:// or localhost)
+            const isLive = window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
+            
+            if (isLive) {
+                // Live site - use Vercel API
+                const response = await fetch('/api/offers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ offers: this.offers })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    this.showMessage('Offers updated successfully! Changes are live across all devices.', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to save offers');
+                }
+            } else {
+                // Local development - use localStorage
+                localStorage.setItem('bhajarang_offers', JSON.stringify(this.offers));
+                this.showMessage('Offers updated successfully!', 'success');
+            }
         } catch (error) {
             console.error('Error saving offers:', error);
-            this.showMessage('Error saving offers. Please try again.', 'error');
+            // Fallback to localStorage
+            localStorage.setItem('bhajarang_offers', JSON.stringify(this.offers));
+            this.showMessage('Saved locally. May not sync across devices.', 'error');
         }
     }
 

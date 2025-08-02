@@ -1,0 +1,29 @@
+{
+  "offers": [
+    {
+      "id": "offer_1",
+      "title": "🎉 20% Off Screen Replacement",
+      "description": "Get 20% discount on all mobile screen replacements. Valid for all brands including iPhone, Samsung, OnePlus, and more. Professional installation with 6-month warranty included.",
+      "validity": "2025-03-31",
+      "image": "",
+      "createdAt": "2025-01-02T19:56:00.000Z"
+    },
+    {
+      "id": "offer_2",
+      "title": "🔋 Free Battery Check + 15% Off Replacement",
+      "description": "Free battery health check for all smartphones. If replacement needed, get 15% off on genuine batteries. Includes installation and 1-year warranty.",
+      "validity": "2025-04-15",
+      "image": "",
+      "createdAt": "2025-01-02T19:56:00.000Z"
+    },
+    {
+      "id": "offer_3",
+      "title": "🎧 Premium Earphones Deal",
+      "description": "High-quality earphones with crystal clear sound. Perfect for music lovers and professionals. Limited time offer with free carrying case included.",
+      "validity": "2025-02-28",
+      "image": "https://i.ibb.co/nqNjsHfB/earphones.png",
+      "createdAt": "2025-01-02T19:56:00.000Z"
+    }
+  ],
+  "lastUpdated": "2025-01-02T19:56:00.000Z"
+}
