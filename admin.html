@@ -44,24 +44,73 @@
 
                 <form id="admin-login-form" class="login-form">
                     <div class="form-group">
+                        <label for="admin-email">
+                            <i class="fas fa-envelope"></i>
+                            Email
+                        </label>
+                        <input type="email" id="admin-email" name="email" required placeholder="Enter admin email">
+                    </div>
+                    <div class="form-group">
                         <label for="admin-password">
                             <i class="fas fa-lock"></i>
                             Password
                         </label>
                         <input type="password" id="admin-password" name="password" required placeholder="Enter admin password">
                     </div>
-
                     <button type="submit" class="login-btn">
                         <i class="fas fa-sign-in-alt"></i>
                         Login to Dashboard
                     </button>
                 </form>
-
                 <div id="login-error" class="login-error" style="display: none;">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <span>Incorrect password. Please try again.</span>
+                    <span id="login-error-msg">Incorrect email or password. Please try again.</span>
                 </div>
-
+                <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+                <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+                <script>
+                  // Firebase config (same as dashboard)
+                  const firebaseConfig = {
+                    apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
+                    authDomain: "bhajarang-offers.firebaseapp.com",
+                    projectId: "bhajarang-offers",
+                    storageBucket: "bhajarang-offers.firebasestorage.app",
+                    messagingSenderId: "585545255878",
+                    appId: "1:585545255878:web:bc728387d933b1fed540c7",
+                    measurementId: "G-29J69VBDVH"
+                  };
+                  firebase.initializeApp(firebaseConfig);
+                  const auth = firebase.auth();
+                  // Login form logic
+                  const loginForm = document.getElementById('admin-login-form');
+                  const emailInput = document.getElementById('admin-email');
+                  const passwordInput = document.getElementById('admin-password');
+                  const loginError = document.getElementById('login-error');
+                  const loginErrorMsg = document.getElementById('login-error-msg');
+                  loginForm.onsubmit = async function(e) {
+                    e.preventDefault();
+                    loginError.style.display = 'none';
+                    loginErrorMsg.textContent = '';
+                    const email = emailInput.value.trim();
+                    const password = passwordInput.value;
+                    if (!email || !password) {
+                      loginError.style.display = 'block';
+                      loginErrorMsg.textContent = 'Please enter both email and password.';
+                      return;
+                    }
+                    try {
+                      await auth.signInWithEmailAndPassword(email, password);
+                      window.location.href = 'admin-dashboard.html';
+                    } catch (err) {
+                      loginError.style.display = 'block';
+                      loginErrorMsg.textContent = err.message || 'Incorrect email or password.';
+                    }
+                  };
+                  // If already logged in, redirect
+                  auth.onAuthStateChanged(user => {
+                    if (user) window.location.href = 'admin-dashboard.html';
+                  });
+                </script>
                 <div class="login-info">
                     <h4>Admin Features:</h4>
                     <ul>
