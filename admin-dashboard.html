@@ -1,6 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Jai Bhajarang Mobiles</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+  <div id="admin-container">
+    <h1>Admin Dashboard</h1>
+    <div id="auth-section">
+      <div id="login-form" style="display:none;">
+        <h2>Admin Login</h2>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button id="login-btn">Login</button>
+        <button id="google-login-btn">Sign in with Google</button>
+        <p id="login-error" style="color: red;"></p>
+      </div>
+      <div id="logout-section" style="display:none;">
+        <span id="user-email"></span>
+        <button id="logout-btn">Logout</button>
+      </div>
+    </div>
+
+    <div id="offers-section" style="display:none;">
+      <h2>Manage Offers</h2>
+      <button id="add-offer-btn">Add Offer</button>
+      <table id="offers-table">
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Valid Till</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Offers will be populated here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Offer Modal -->
+    <div id="offer-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="close-modal">&times;</span>
+        <h3 id="modal-title">Add/Edit Offer</h3>
+        <form id="offer-form">
+          <input type="hidden" id="offer-id">
+          <label>Title:<input type="text" id="offer-title" required></label>
+          <label>Description:<textarea id="offer-description" required></textarea></label>
+          <label>Price:<input type="text" id="offer-price" required></label>
+          <label>Valid Till:<input type="date" id="offer-validTill" required></label>
+          <label>Image:
+            <input type="file" id="offer-image" accept="image/*">
+            <img id="offer-image-preview" src="" alt="Preview" style="max-width:80px;display:none;">
+          </label>
+          <button type="submit" id="save-offer-btn">Save Offer</button>
+        </form>
+        <div id="offer-form-error" style="color:red;"></div>
+      </div>
+    </div>
+  </div>
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>
+>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Jai Bhajarang Mobiles</title>

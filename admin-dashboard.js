@@ -1,4 +1,196 @@
-// Admin Dashboard JavaScript
+// ==== 1. Firebase Config & Init ====
+const firebaseConfig = {
+  apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
+  authDomain: "bhajarang-offers.firebaseapp.com",
+  projectId: "bhajarang-offers",
+  storageBucket: "bhajarang-offers.firebasestorage.app",
+  messagingSenderId: "585545255878",
+  appId: "1:585545255878:web:bc728387d933b1fed540c7",
+  measurementId: "G-29J69VBDVH"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// ==== 2. Auth Logic ====
+const loginForm = document.getElementById('login-form');
+const logoutSection = document.getElementById('logout-section');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const loginBtn = document.getElementById('login-btn');
+const googleLoginBtn = document.getElementById('google-login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const userEmailSpan = document.getElementById('user-email');
+const loginError = document.getElementById('login-error');
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    loginForm.style.display = 'none';
+    logoutSection.style.display = 'block';
+    userEmailSpan.textContent = user.email;
+    document.getElementById('offers-section').style.display = 'block';
+    loadOffers();
+  } else {
+    loginForm.style.display = 'block';
+    logoutSection.style.display = 'none';
+    document.getElementById('offers-section').style.display = 'none';
+  }
+});
+
+loginBtn.onclick = async () => {
+  loginError.textContent = '';
+  try {
+    await auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value);
+  } catch (e) {
+    loginError.textContent = e.message;
+  }
+};
+googleLoginBtn.onclick = async () => {
+  loginError.textContent = '';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    await auth.signInWithPopup(provider);
+  } catch (e) {
+    loginError.textContent = e.message;
+  }
+};
+logoutBtn.onclick = () => auth.signOut();
+
+// ==== 3. Offers CRUD Logic ====
+const offersTableBody = document.querySelector('#offers-table tbody');
+const addOfferBtn = document.getElementById('add-offer-btn');
+const offerModal = document.getElementById('offer-modal');
+const closeModal = document.getElementById('close-modal');
+const offerForm = document.getElementById('offer-form');
+const offerIdInput = document.getElementById('offer-id');
+const offerTitleInput = document.getElementById('offer-title');
+const offerDescriptionInput = document.getElementById('offer-description');
+const offerPriceInput = document.getElementById('offer-price');
+const offerValidTillInput = document.getElementById('offer-validTill');
+const offerImageInput = document.getElementById('offer-image');
+const offerImagePreview = document.getElementById('offer-image-preview');
+const offerFormError = document.getElementById('offer-form-error');
+
+let offersUnsubscribe = null;
+
+function loadOffers() {
+  if (offersUnsubscribe) offersUnsubscribe();
+  offersUnsubscribe = db.collection('offers').orderBy('validTill').onSnapshot(snapshot => {
+    offersTableBody.innerHTML = '';
+    snapshot.forEach(doc => {
+      const offer = doc.data();
+      offer.id = doc.id;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${offer.imageUrl ? `<img src="${offer.imageUrl}" style="width:60px;max-height:60px;object-fit:contain;">` : ''}</td>
+        <td>${offer.title}</td>
+        <td>${offer.description}</td>
+        <td>${offer.price}</td>
+        <td>${offer.validTill}</td>
+        <td>
+          <button onclick="editOffer('${offer.id}')">Edit</button>
+          <button onclick="deleteOffer('${offer.id}')">Delete</button>
+        </td>
+      `;
+      offersTableBody.appendChild(tr);
+    });
+  });
+}
+
+window.editOffer = function(id) {
+  db.collection('offers').doc(id).get().then(doc => {
+    if (!doc.exists) return;
+    const offer = doc.data();
+    offerIdInput.value = id;
+    offerTitleInput.value = offer.title;
+    offerDescriptionInput.value = offer.description;
+    offerPriceInput.value = offer.price;
+    offerValidTillInput.value = offer.validTill;
+    offerImagePreview.src = offer.imageUrl || '';
+    offerImagePreview.style.display = offer.imageUrl ? 'block' : 'none';
+    offerImageInput.value = '';
+    offerModal.style.display = 'block';
+    offerFormError.textContent = '';
+    document.getElementById('modal-title').textContent = 'Edit Offer';
+  });
+};
+
+window.deleteOffer = function(id) {
+  if (confirm('Delete this offer?')) {
+    db.collection('offers').doc(id).delete();
+  }
+};
+
+addOfferBtn.onclick = () => {
+  offerIdInput.value = '';
+  offerTitleInput.value = '';
+  offerDescriptionInput.value = '';
+  offerPriceInput.value = '';
+  offerValidTillInput.value = '';
+  offerImagePreview.src = '';
+  offerImagePreview.style.display = 'none';
+  offerImageInput.value = '';
+  offerModal.style.display = 'block';
+  offerFormError.textContent = '';
+  document.getElementById('modal-title').textContent = 'Add Offer';
+};
+
+closeModal.onclick = () => {
+  offerModal.style.display = 'none';
+};
+
+window.onclick = function(event) {
+  if (event.target === offerModal) offerModal.style.display = 'none';
+};
+
+offerImageInput.onchange = function() {
+  if (offerImageInput.files && offerImageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      offerImagePreview.src = e.target.result;
+      offerImagePreview.style.display = 'block';
+    };
+    reader.readAsDataURL(offerImageInput.files[0]);
+  }
+};
+
+offerForm.onsubmit = async function(e) {
+  e.preventDefault();
+  offerFormError.textContent = '';
+  const id = offerIdInput.value;
+  const title = offerTitleInput.value.trim();
+  const description = offerDescriptionInput.value.trim();
+  const price = offerPriceInput.value.trim();
+  const validTill = offerValidTillInput.value;
+  let imageUrl = offerImagePreview.src || '';
+
+  // Upload image if a new one is selected
+  if (offerImageInput.files && offerImageInput.files[0]) {
+    const file = offerImageInput.files[0];
+    const storageRef = storage.ref().child('offers/' + Date.now() + '_' + file.name);
+    try {
+      const snapshot = await storageRef.put(file);
+      imageUrl = await snapshot.ref.getDownloadURL();
+    } catch (err) {
+      offerFormError.textContent = 'Image upload failed.';
+      return;
+    }
+  }
+
+  const offerData = { title, description, price, validTill, imageUrl };
+  try {
+    if (id) {
+      await db.collection('offers').doc(id).update(offerData);
+    } else {
+      await db.collection('offers').add(offerData);
+    }
+    offerModal.style.display = 'none';
+  } catch (err) {
+    offerFormError.textContent = 'Failed to save offer.';
+  }
+};
+
 class AdminDashboard {
     constructor() {
         this.offers = [];
