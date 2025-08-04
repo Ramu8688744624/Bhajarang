@@ -1,88 +1,67 @@
-// Offers Page JavaScript
+// Offers Page JavaScript - Firebase Only Version
 class OffersManager {
     constructor() {
         this.offers = [];
+        this.db = null;
         this.init();
     }
 
     async init() {
+        // Initialize Firebase if not already done
+        if (typeof firebase !== 'undefined' && !this.db) {
+            this.db = firebase.firestore();
+        }
+        
         await this.loadOffers();
         this.renderOffers();
     }
 
     async loadOffers() {
         try {
-            // Check if we're on live site (has domain) or local (file:// or localhost)
-            const isLive = window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
+            console.log('Loading offers from Firebase...');
             
-            if (isLive) {
-                // Live site - use Vercel API
-                const response = await fetch('/api/offers');
-                const data = await response.json();
-                this.offers = data.offers || [];
-            } else {
-                // Local development - use localStorage
-                const storedOffers = localStorage.getItem('bhajarang_offers');
-                this.offers = storedOffers ? JSON.parse(storedOffers) : [];
+            if (!this.db) {
+                console.error('Firebase not initialized');
+                this.offers = [];
+                return;
+            }
+
+            // Load active offers from Firebase Firestore
+            // First get current date in YYYY-MM-DD format for comparison
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayStr = today.toISOString().split('T')[0];
+            
+            console.log('Loading active offers with today:', todayStr);
+            
+            const snapshot = await this.db.collection('offers')
+                .where('isActive', '==', true)
+                .orderBy('createdAt', 'desc')
+                .get();
                 
-                // Add sample offers if none exist (for demo purposes)
-                if (this.offers.length === 0) {
-                    this.addSampleOffers();
-                }
-            }
+            console.log('Raw offers from Firestore:', snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toString() : doc.data().createdAt,
+                updatedAt: doc.data().updatedAt?.toDate ? doc.data().updatedAt.toDate().toString() : doc.data().updatedAt
+            })));
+            
+            this.offers = [];
+            snapshot.forEach(doc => {
+                const offer = doc.data();
+                offer.id = doc.id;
+                this.offers.push(offer);
+            });
+            
+            console.log('Loaded', this.offers.length, 'offers from Firebase');
+            
         } catch (error) {
-            console.error('Error loading offers:', error);
-            // Fallback to localStorage
-            const storedOffers = localStorage.getItem('bhajarang_offers');
-            this.offers = storedOffers ? JSON.parse(storedOffers) : [];
+            console.error('Error loading offers from Firebase:', error);
+            this.offers = [];
         }
     }
 
-    addSampleOffers() {
-        const sampleOffers = [
-            {
-                id: 'offer_1',
-                title: '🎉 20% Off Screen Replacement',
-                description: 'Get 20% discount on all mobile screen replacements. Valid for all brands including iPhone, Samsung, OnePlus, and more. Professional installation with 6-month warranty included.',
-                validity: this.getDateString(30), // 30 days from now
-                image: '',
-                createdAt: new Date().toISOString()
-            },
-            {
-                id: 'offer_2',
-                title: '🔋 Free Battery Check + 15% Off Replacement',
-                description: 'Free battery health check for all smartphones. If replacement needed, get 15% off on genuine batteries. Includes installation and 1-year warranty.',
-                validity: this.getDateString(45), // 45 days from now
-                image: '',
-                createdAt: new Date().toISOString()
-            },
-            {
-                id: 'offer_3',
-                title: '📱 Buy 2 Accessories, Get 1 FREE',
-                description: 'Purchase any 2 mobile accessories (cases, chargers, screen guards, etc.) and get the lowest priced item absolutely FREE. Mix and match from our wide collection.',
-                validity: this.getDateString(60), // 60 days from now
-                image: '',
-                createdAt: new Date().toISOString()
-            }
-        ];
 
-        this.offers = sampleOffers;
-        this.saveOffers();
-    }
-
-    getDateString(daysFromNow) {
-        const date = new Date();
-        date.setDate(date.getDate() + daysFromNow);
-        return date.toISOString().split('T')[0];
-    }
-
-    saveOffers() {
-        try {
-            localStorage.setItem('bhajarang_offers', JSON.stringify(this.offers));
-        } catch (error) {
-            console.error('Error saving offers:', error);
-        }
-    }
 
     renderOffers() {
         const loadingEl = document.getElementById('offers-loading');
@@ -129,20 +108,39 @@ class OffersManager {
     createOfferCard(offer) {
         const card = document.createElement('div');
         card.className = 'offer-card';
+        
+        // Format dates
+        const formattedValidTill = offer.validTill ? this.formatDate(offer.validTill) : null;
+        const isExpired = formattedValidTill ? this.isExpired(offer.validTill) : false;
+        
+        // Determine what to show in the image container
+        let imageContent = '';
+        if (offer.imageUrl && offer.imageUrl.trim() !== '') {
+            imageContent = `
+                <img src="${offer.imageUrl}" 
+                     alt="${offer.title}" 
+                     class="offer-image"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'default-icon\'><i class=\'fas fa-gift\'></i></div>'">
+            `;
+        } else {
+            imageContent = `
+                <div class="default-icon">
+                    <i class="fas fa-gift"></i>
+                </div>
+            `;
+        }
+        
         card.innerHTML = `
-            <div class="offer-image">
-                ${offer.image ? 
-                    `<img src="${offer.image}" alt="${offer.title}" onerror="this.parentElement.innerHTML='<div class=\\'default-icon\\'><i class=\\'fas fa-gift\\'></i></div>'">` :
-                    `<div class="default-icon"><i class="fas fa-gift"></i></div>`
-                }
+            <div class="offer-image-container">
+                ${imageContent}
             </div>
             <div class="offer-content">
-                <h3 class="offer-title">${offer.title}</h3>
-                <p class="offer-description">${offer.description}</p>
-                ${offer.validity ? `
-                    <div class="offer-validity ${this.isExpired(offer.validity) ? 'expired' : ''}">
+                <h3 class="offer-title">${this.escapeHtml(offer.title)}</h3>
+                <p class="offer-description">${this.escapeHtml(offer.description)}</p>
+                ${formattedValidTill ? `
+                    <div class="offer-validity ${isExpired ? 'expired' : ''}">
                         <i class="fas fa-calendar-alt"></i>
-                        <span>Valid until: ${this.formatDate(offer.validity)}</span>
+                        <span>Valid until: ${formattedValidTill}</span>
                     </div>
                 ` : ''}
             </div>
@@ -168,26 +166,53 @@ class OffersManager {
 
     formatDate(dateString) {
         if (!dateString) return '';
-        const date = new Date(dateString);
+        
+        let date;
+        // Handle both string dates and Firestore Timestamp objects
+        if (typeof dateString === 'string') {
+            date = new Date(dateString);
+        } else if (dateString.toDate) {
+            // Handle Firestore Timestamp
+            date = dateString.toDate();
+        } else if (dateString.seconds) {
+            // Handle Firestore Timestamp (compat mode)
+            date = new Date(dateString.seconds * 1000);
+        } else {
+            return '';
+        }
+        
+        if (isNaN(date.getTime())) return '';
+        
         return date.toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'long',
+            day: '2-digit',
+            month: 'short',
             year: 'numeric'
         });
+    }
+
+    // Helper function to prevent XSS
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return String(unsafe)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 }
 
 // Initialize offers manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new OffersManager();
-});
 
-// Refresh offers when page becomes visible (in case admin updated offers)
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        // Small delay to ensure any admin changes are saved
-        setTimeout(() => {
-            const offersManager = new OffersManager();
-        }, 500);
-    }
+    // Refresh offers when page becomes visible (in case admin updated offers)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            // Small delay to ensure any admin changes are saved
+            setTimeout(() => {
+                new OffersManager();
+            }, 500);
+        }
+    });
 });

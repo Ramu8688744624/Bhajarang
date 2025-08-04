@@ -128,6 +128,28 @@
         </div>
     </footer>
 
+    <!-- Firebase Scripts (v9.23.0 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
+          authDomain: "bhajarang-offers.firebaseapp.com",
+          projectId: "bhajarang-offers",
+          messagingSenderId: "585545255878",
+          appId: "1:585545255878:web:bc728387d933b1fed540c7",
+          measurementId: "G-29J69VBDVH"
+        };
+        
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+    
     <script src="script.js"></script>
     <script src="offers.js"></script>
 </body>

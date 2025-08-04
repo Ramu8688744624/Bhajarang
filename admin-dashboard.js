@@ -1,23 +1,30 @@
 // ==== Jai Bhajarang Mobiles Admin Dashboard (Firebase Version) ====
 
 // 1. Firebase Config & Init
-const firebaseConfig = {
-  apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
-  authDomain: "bhajarang-offers.firebaseapp.com",
-  projectId: "bhajarang-offers",
-  storageBucket: "bhajarang-offers.firebasestorage.app",
-  messagingSenderId: "585545255878",
-  appId: "1:585545255878:web:bc728387d933b1fed540c7",
-  measurementId: "G-29J69VBDVH"
-};
-
-// Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+if (typeof firebaseConfig === 'undefined') {
+  const firebaseConfig = {
+    apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
+    authDomain: "bhajarang-offers.firebaseapp.com",
+    projectId: "bhajarang-offers",
+    messagingSenderId: "585545255878",
+    appId: "1:585545255878:web:bc728387d933b1fed540c7",
+    measurementId: "G-29J69VBDVH"
+  };
+  
+  // Initialize Firebase if not already initialized
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 }
+
+// Get Firebase services
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
+
+// Cloudinary configuration
+const CLOUDINARY_UPLOAD_PRESET = 'bhajarang_offers';
+const CLOUDINARY_CLOUD_NAME = 'duoocnutq';
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 // 2. Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
@@ -112,8 +119,8 @@ function initializeDashboard() {
         row.innerHTML = `
           <td class="offer-title-cell">${escapeHtml(offer.title)}</td>
           <td class="offer-description-cell" title="${escapeHtml(offer.description)}">${escapeHtml(offer.description)}</td>
-          <td class="offer-validity-cell">${offer.validTill ? escapeHtml(offer.validTill) : 'No expiry'}</td>
-          <td>${offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('en-IN') : ''}</td>
+          <td class="offer-validity-cell">${offer.validTill ? formatDate(offer.validTill) : 'No expiry'}</td>
+          <td>${offer.createdAt ? formatDate(offer.createdAt.toDate ? offer.createdAt.toDate() : offer.createdAt) : ''}</td>
           <td>
             <div class="offer-actions">
               <button class="action-btn edit" onclick="window.editOffer('${escapeHtml(offer.id)}')">
@@ -227,51 +234,120 @@ function initializeDashboard() {
     try {
       let imageUrl = existingImageUrl;
       
-      // If a new image file is selected, upload it
+      // If a new image file is selected, upload it to Cloudinary
       if (imageFile) {
-        console.log('Uploading image file:', imageFile.name);
-        const storageRef = storage.ref();
-        const fileRef = storageRef.child(`offers/${Date.now()}_${imageFile.name}`);
-        const uploadTask = fileRef.put(imageFile);
+        console.log('Uploading image file to Cloudinary:', imageFile.name);
         
-        // Show upload progress
         const progressBar = document.getElementById('upload-progress');
         if (progressBar) {
           progressBar.style.display = 'block';
           progressBar.value = 0;
+        }
+        
+        try {
+          // Create a new Promise to handle the upload
+          const uploadPromise = new Promise((resolveUpload, rejectUpload) => {
+            const formData = new FormData();
+            formData.append('file', imageFile);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('folder', 'jai_bhajarang_offers');
+            
+            const xhr = new XMLHttpRequest();
+            xhr.responseType = 'json';
+            
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (e) => {
+              if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                if (progressBar) {
+                  progressBar.value = percentComplete;
+                }
+                console.log('Upload progress:', Math.round(percentComplete) + '%');
+              }
+            });
+            
+            xhr.onload = () => {
+              if (xhr.status === 200) {
+                const response = xhr.response;
+                console.log('File uploaded to Cloudinary:', response.secure_url);
+                
+                if (formOfferFormError) {
+                  formOfferFormError.textContent = 'Image uploaded successfully!';
+                  formOfferFormError.style.color = 'green';
+                }
+                
+                // Resolve with the secure URL
+                resolveUpload(response.secure_url);
+              } else {
+                const error = xhr.response || { message: 'Unknown error occurred' };
+                console.error('Upload error:', error);
+                if (formOfferFormError) {
+                  formOfferFormError.textContent = `Upload failed: ${error.message || 'Please try again.'}`;
+                  formOfferFormError.style.color = 'red';
+                }
+                rejectUpload(new Error(error.message || 'Upload failed'));
+              }
+              
+              if (progressBar) {
+                progressBar.style.display = 'none';
+              }
+            };
+            
+            xhr.onerror = () => {
+              console.error('Upload failed');
+              if (formOfferFormError) {
+                formOfferFormError.textContent = 'Upload failed. Please check your connection and try again.';
+                formOfferFormError.style.color = 'red';
+              }
+              rejectUpload(new Error('Upload failed'));
+            };
+            
+            xhr.ontimeout = () => {
+              console.error('Upload timed out');
+              if (formOfferFormError) {
+                formOfferFormError.textContent = 'Upload timed out. Please try again.';
+                formOfferFormError.style.color = 'red';
+              }
+              rejectUpload(new Error('Upload timed out'));
+            };
+            
+            xhr.open('POST', CLOUDINARY_UPLOAD_URL, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.send(formData);
+          });
           
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              // Progress function
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              progressBar.value = progress;
-              console.log('Upload progress:', progress + '%');
-            },
-            (error) => {
-              // Error function
-              console.error('Upload error:', error);
-              formOfferFormError.textContent = 'Failed to upload image. Please try again.';
-              if (progressBar) progressBar.style.display = 'none';
-              throw error;
-            }
-          );
+          // Wait for the upload to complete and get the URL
+          imageUrl = await uploadPromise;
+          console.log('Image upload completed, URL:', imageUrl);
           
-          // Wait for upload to complete
-          await uploadTask;
-          imageUrl = await fileRef.getDownloadURL();
-          console.log('Image uploaded successfully:', imageUrl);
-          if (progressBar) progressBar.style.display = 'none';
+        } catch (error) {
+          console.error('Error during file upload:', error);
+          if (formOfferFormError) {
+            formOfferFormError.textContent = 'Upload failed: ' + (error.message || 'Please try again.');
+            formOfferFormError.style.color = 'red';
+          }
+          throw error;
+        } finally {
+          if (progressBar) {
+            progressBar.style.display = 'none';
+          }
         }
       }
 
+      // Prepare the offer data with proper field handling
       const offerData = { 
-        title, 
-        description, 
+        title: title.trim(),
+        description: description.trim(),
         validTill: validTill || null, 
-        imageUrl: imageUrl || null, 
-        createdAt,
-        updatedAt: new Date().toISOString()
+        imageUrl: imageUrl || "",
+        isActive: true,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+      
+      // Only set createdAt for new documents
+      if (!id) {
+        offerData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      }
       
       console.log('Saving offer data:', offerData);
       
@@ -349,6 +425,20 @@ function clearFileInput() {
   if (preview) preview.style.display = 'none';
   const removeBtn = document.getElementById('remove-image-btn');
   if (removeBtn) removeBtn.style.display = 'none';
+}
+
+// Format date to DD/MM/YYYY
+function formatDate(date) {
+  if (!date) return '';
+  
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  
+  return `${day}/${month}/${year}`;
 }
 
 // Make functions available globally
