@@ -1,8 +1,6 @@
-// ==== 1. Firebase Config & Init ====
-// ==== Jai Bhajarang Mobiles Admin Dashboard (Unified Firebase Version) ====
+// ==== Jai Bhajarang Mobiles Admin Dashboard (Firebase Version) ====
 
-// ==== Jai Bhajarang Mobiles Admin Dashboard (Unified Firebase Version) ====
-
+// 1. Firebase Config & Init
 const firebaseConfig = {
   apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
   authDomain: "bhajarang-offers.firebaseapp.com",
@@ -13,815 +11,423 @@ const firebaseConfig = {
   measurementId: "G-29J69VBDVH"
 };
 
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-auth.onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = 'admin.html'; // redirect to login page
-  } else {
-    loadOffers();
-  }
+// 2. Wait for DOM to load
+document.addEventListener('DOMContentLoaded', function() {
+  // 3. Auth Check
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = 'admin.html';
+    } else {
+      initializeDashboard();
+    }
+  });
 });
 
-// DOM references
-const offersTableBody = document.getElementById('offers-table-body');
-const addOfferBtn = document.getElementById('add-offer-btn');
-const offerFormSection = document.getElementById('offer-form-section');
-const offerForm = document.getElementById('offer-form');
-const offerIdInput = document.getElementById('offer-id');
-const offerTitleInput = document.getElementById('offer-title');
-const offerDescriptionInput = document.getElementById('offer-description');
-const offerValidityInput = document.getElementById('offer-validity');
-const offerImageInput = document.getElementById('offer-image');
-const offerFormError = document.getElementById('offer-form-error');
-const saveBtnText = document.getElementById('save-btn-text');
-const closeFormBtn = document.getElementById('close-form-btn');
-const cancelFormBtn = document.getElementById('cancel-form-btn');
-const adminLoading = document.getElementById('admin-loading');
-const adminNoOffers = document.getElementById('admin-no-offers');
-const offersTableContainer = document.getElementById('offers-table-container');
-const offersCount = document.getElementById('offers-count');
+function initializeDashboard() {
+  console.log('Initializing dashboard...');
+  
+  // 4. DOM References
+  const offersTableBody = document.getElementById('offers-table-body');
+  const addOfferBtn = document.getElementById('add-offer-btn');
+  const offerFormSection = document.getElementById('offer-form-section');
+  const offerForm = document.getElementById('offer-form');
+  const offerIdInput = document.getElementById('offer-id');
+  const offerTitleInput = document.getElementById('offer-title');
+  const offerDescriptionInput = document.getElementById('offer-description');
+  const offerValidityInput = document.getElementById('offer-validity');
+  const offerFormError = document.getElementById('offer-form-error');
+  const saveBtnText = document.getElementById('save-btn-text');
+  const closeFormBtn = document.getElementById('close-form-btn');
+  const cancelFormBtn = document.getElementById('cancel-form-btn');
+  const adminLoading = document.getElementById('admin-loading');
+  const adminNoOffers = document.getElementById('admin-no-offers');
+  const offersTableContainer = document.getElementById('offers-table-container');
+  const offersCount = document.getElementById('offers-count');
 
-let editingOfferId = null;
-let offersUnsubscribe = null;
+  // 5. State
+  let editingOfferId = null;
+  let offersUnsubscribe = null;
 
-// --- Firebase-powered Offers CRUD ---
-
-function loadOffers() {
-  if (offersUnsubscribe) offersUnsubscribe();
-  adminLoading.style.display = 'block';
-  adminNoOffers.style.display = 'none';
-  offersTableContainer.style.display = 'none';
-  offersUnsubscribe = db.collection('offers').orderBy('validTill').onSnapshot(snapshot => {
-    offersTableBody.innerHTML = '';
-    const offers = [];
-    snapshot.forEach(doc => {
-      const offer = doc.data();
-      offer.id = doc.id;
-      offers.push(offer);
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="offer-title-cell">${offer.title}</td>
-        <td class="offer-description-cell" title="${offer.description}">${offer.description}</td>
-        <td class="offer-validity-cell">${offer.validTill || 'No expiry'}</td>
-        <td>${offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('en-IN') : ''}</td>
-        <td>
-          <div class="offer-actions">
-            <button class="action-btn edit" onclick="editOffer('${offer.id}')"><i class="fas fa-edit"></i> Edit</button>
-            <button class="action-btn delete" onclick="deleteOffer('${offer.id}')"><i class="fas fa-trash"></i> Delete</button>
-          </div>
-        </td>
-      `;
-      offersTableBody.appendChild(row);
-    });
-    offersCount.textContent = offers.length;
-    adminLoading.style.display = 'none';
-    if (offers.length === 0) {
-      adminNoOffers.style.display = 'block';
-      offersTableContainer.style.display = 'none';
-    } else {
-      adminNoOffers.style.display = 'none';
-      offersTableContainer.style.display = 'block';
-    }
-  });
-}
-
-window.editOffer = function(id) {
-  db.collection('offers').doc(id).get().then(doc => {
-    if (!doc.exists) return;
-    const offer = doc.data();
-    editingOfferId = id;
-    offerIdInput.value = id;
-    offerTitleInput.value = offer.title;
-    offerDescriptionInput.value = offer.description;
-    offerValidityInput.value = offer.validTill || '';
-    offerImageInput.value = offer.imageUrl || '';
-    saveBtnText.textContent = 'Update Offer';
-    offerFormSection.style.display = 'flex';
-    offerFormError.textContent = '';
-    document.getElementById('form-title').textContent = 'Edit Offer';
-  });
-};
-
-window.deleteOffer = function(id) {
-  if (confirm('Delete this offer?')) {
-    db.collection('offers').doc(id).delete();
-  }
-};
-
-addOfferBtn.onclick = () => {
-  editingOfferId = null;
-  offerForm.reset();
-  offerIdInput.value = '';
-  saveBtnText.textContent = 'Save Offer';
-  document.getElementById('form-title').textContent = 'Add New Offer';
-  offerFormSection.style.display = 'flex';
-  offerFormError.textContent = '';
-};
-
-closeFormBtn.onclick = cancelFormBtn.onclick = () => {
-  offerFormSection.style.display = 'none';
-  offerForm.reset();
-  editingOfferId = null;
-};
-
-offerForm.onsubmit = async function(e) {
-  e.preventDefault();
-  offerFormError.textContent = '';
-  const id = offerIdInput.value;
-  const title = offerTitleInput.value.trim();
-  const description = offerDescriptionInput.value.trim();
-  const validTill = offerValidityInput.value;
-  const imageUrl = offerImageInput.value.trim();
-  const createdAt = new Date().toISOString();
-  if (!title || !description) {
-    offerFormError.textContent = 'Title and description are required.';
-    return;
-  }
-  const offerData = { title, description, validTill, imageUrl, createdAt };
-  try {
-    if (id) {
-      await db.collection('offers').doc(id).update(offerData);
-    } else {
-      await db.collection('offers').add(offerData);
-    }
-    offerFormSection.style.display = 'none';
-    offerForm.reset();
-    editingOfferId = null;
-  } catch (err) {
-    offerFormError.textContent = 'Failed to save offer.';
-  }
-};
-
-  if (offersUnsubscribe) offersUnsubscribe();
-  adminLoading.style.display = 'block';
-  adminNoOffers.style.display = 'none';
-  offersTableContainer.style.display = 'none';
-  offersUnsubscribe = db.collection('offers').orderBy('validTill').onSnapshot(snapshot => {
-    offersTableBody.innerHTML = '';
-    const offers = [];
-    snapshot.forEach(doc => {
-      const offer = doc.data();
-      offer.id = doc.id;
-      offers.push(offer);
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="offer-title-cell">${offer.title}</td>
-        <td class="offer-description-cell" title="${offer.description}">${offer.description}</td>
-        <td class="offer-validity-cell">${offer.validTill || 'No expiry'}</td>
-        <td>${offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('en-IN') : ''}</td>
-        <td>
-          <div class="offer-actions">
-            <button class="action-btn edit" onclick="editOffer('${offer.id}')"><i class="fas fa-edit"></i> Edit</button>
-            <button class="action-btn delete" onclick="deleteOffer('${offer.id}')"><i class="fas fa-trash"></i> Delete</button>
-          </div>
-        </td>
-      `;
-      offersTableBody.appendChild(row);
-    });
-    offersCount.textContent = offers.length;
-    adminLoading.style.display = 'none';
-    if (offers.length === 0) {
-      adminNoOffers.style.display = 'block';
-      offersTableContainer.style.display = 'none';
-    } else {
-      adminNoOffers.style.display = 'none';
-      offersTableContainer.style.display = 'block';
-    }
-  });
-}
-
-window.editOffer = function(id) {
-  db.collection('offers').doc(id).get().then(doc => {
-    if (!doc.exists) return;
-    const offer = doc.data();
-    editingOfferId = id;
-    offerIdInput.value = id;
-    offerTitleInput.value = offer.title;
-    offerDescriptionInput.value = offer.description;
-    offerValidityInput.value = offer.validTill || '';
-    offerImageInput.value = offer.imageUrl || '';
-    saveBtnText.textContent = 'Update Offer';
-    offerFormSection.style.display = 'flex';
-    offerFormError.textContent = '';
-    document.getElementById('form-title').textContent = 'Edit Offer';
-  });
-};
-
-window.deleteOffer = function(id) {
-  if (confirm('Delete this offer?')) {
-    db.collection('offers').doc(id).delete();
-  }
-};
-
-addOfferBtn.onclick = () => {
-  editingOfferId = null;
-  offerForm.reset();
-  offerIdInput.value = '';
-  saveBtnText.textContent = 'Save Offer';
-  document.getElementById('form-title').textContent = 'Add New Offer';
-  offerFormSection.style.display = 'flex';
-  offerFormError.textContent = '';
-};
-
-closeFormBtn.onclick = cancelFormBtn.onclick = () => {
-  offerFormSection.style.display = 'none';
-  offerForm.reset();
-  editingOfferId = null;
-};
-
-offerForm.onsubmit = async function(e) {
-  e.preventDefault();
-  offerFormError.textContent = '';
-  const id = offerIdInput.value;
-  const title = offerTitleInput.value.trim();
-  const description = offerDescriptionInput.value.trim();
-  const validTill = offerValidityInput.value;
-  const imageUrl = offerImageInput.value.trim();
-  const createdAt = new Date().toISOString();
-  if (!title || !description) {
-    offerFormError.textContent = 'Title and description are required.';
-    return;
-  }
-  const offerData = { title, description, validTill, imageUrl, createdAt };
-  try {
-    if (id) {
-      await db.collection('offers').doc(id).update(offerData);
-    } else {
-      await db.collection('offers').add(offerData);
-    }
-    offerFormSection.style.display = 'none';
-    offerForm.reset();
-    editingOfferId = null;
-  } catch (err) {
-    offerFormError.textContent = 'Failed to save offer.';
-  }
-};
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
-  authDomain: "bhajarang-offers.firebaseapp.com",
-  projectId: "bhajarang-offers",
-  storageBucket: "bhajarang-offers.firebasestorage.app",
-  messagingSenderId: "585545255878",
-  appId: "1:585545255878:web:bc728387d933b1fed540c7",
-  measurementId: "G-29J69VBDVH"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-// ==== 2. Auth Logic ====
-const loginForm = document.getElementById('login-form');
-const logoutSection = document.getElementById('logout-section');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const loginBtn = document.getElementById('login-btn');
-const googleLoginBtn = document.getElementById('google-login-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const userEmailSpan = document.getElementById('user-email');
-const loginError = document.getElementById('login-error');
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    loginForm.style.display = 'none';
-    logoutSection.style.display = 'block';
-    userEmailSpan.textContent = user.email;
-    document.getElementById('offers-section').style.display = 'block';
-    loadOffers();
+  // 6. Event Listeners
+  if (addOfferBtn) {
+    console.log('Add offer button found, attaching listener');
+    addOfferBtn.addEventListener('click', showAddOfferForm);
   } else {
-    loginForm.style.display = 'block';
-    logoutSection.style.display = 'none';
-    document.getElementById('offers-section').style.display = 'none';
+    console.error('Add offer button not found!');
   }
-});
-
-loginBtn.onclick = async () => {
-  loginError.textContent = '';
-  try {
-    await auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value);
-  } catch (e) {
-    loginError.textContent = e.message;
+  
+  if (closeFormBtn) {
+    closeFormBtn.addEventListener('click', hideOfferForm);
   }
-};
-googleLoginBtn.onclick = async () => {
-  loginError.textContent = '';
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try {
-    await auth.signInWithPopup(provider);
-  } catch (e) {
-    loginError.textContent = e.message;
+  
+  if (cancelFormBtn) {
+    cancelFormBtn.addEventListener('click', hideOfferForm);
   }
-};
-logoutBtn.onclick = () => auth.signOut();
 
-// ==== 3. Offers CRUD Logic ====
-const offersTableBody = document.querySelector('#offers-table tbody');
-const addOfferBtn = document.getElementById('add-offer-btn');
-const offerModal = document.getElementById('offer-modal');
-const closeModal = document.getElementById('close-modal');
-const offerForm = document.getElementById('offer-form');
-const offerIdInput = document.getElementById('offer-id');
-const offerTitleInput = document.getElementById('offer-title');
-const offerDescriptionInput = document.getElementById('offer-description');
-const offerPriceInput = document.getElementById('offer-price');
-const offerValidTillInput = document.getElementById('offer-validTill');
-const offerImageInput = document.getElementById('offer-image');
-const offerImagePreview = document.getElementById('offer-image-preview');
-const offerFormError = document.getElementById('offer-form-error');
-
-let offersUnsubscribe = null;
-
-function loadOffers() {
-  if (offersUnsubscribe) offersUnsubscribe();
-  offersUnsubscribe = db.collection('offers').orderBy('validTill').onSnapshot(snapshot => {
-    offersTableBody.innerHTML = '';
-    snapshot.forEach(doc => {
-      const offer = doc.data();
-      offer.id = doc.id;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${offer.imageUrl ? `<img src="${offer.imageUrl}" style="width:60px;max-height:60px;object-fit:contain;">` : ''}</td>
-        <td>${offer.title}</td>
-        <td>${offer.description}</td>
-        <td>${offer.price}</td>
-        <td>${offer.validTill}</td>
-        <td>
-          <button onclick="editOffer('${offer.id}')">Edit</button>
-          <button onclick="deleteOffer('${offer.id}')">Delete</button>
-        </td>
-      `;
-      offersTableBody.appendChild(tr);
-    });
-  });
-}
-
-window.editOffer = function(id) {
-  db.collection('offers').doc(id).get().then(doc => {
-    if (!doc.exists) return;
-    const offer = doc.data();
-    offerIdInput.value = id;
-    offerTitleInput.value = offer.title;
-    offerDescriptionInput.value = offer.description;
-    offerPriceInput.value = offer.price;
-    offerValidTillInput.value = offer.validTill;
-    offerImagePreview.src = offer.imageUrl || '';
-    offerImagePreview.style.display = offer.imageUrl ? 'block' : 'none';
-    offerImageInput.value = '';
-    offerModal.style.display = 'block';
-    offerFormError.textContent = '';
-    document.getElementById('modal-title').textContent = 'Edit Offer';
-  });
-};
-
-window.deleteOffer = function(id) {
-  if (confirm('Delete this offer?')) {
-    db.collection('offers').doc(id).delete();
+  if (offerForm) {
+    console.log('Offer form found, attaching submit listener');
+    offerForm.addEventListener('submit', handleFormSubmit);
+  } else {
+    console.error('Offer form not found!');
   }
-};
 
-addOfferBtn.onclick = () => {
-  offerIdInput.value = '';
-  offerTitleInput.value = '';
-  offerDescriptionInput.value = '';
-  offerPriceInput.value = '';
-  offerValidTillInput.value = '';
-  offerImagePreview.src = '';
-  offerImagePreview.style.display = 'none';
-  offerImageInput.value = '';
-  offerModal.style.display = 'block';
-  offerFormError.textContent = '';
-  document.getElementById('modal-title').textContent = 'Add Offer';
-};
+  // 7. Load offers
+  loadOffers();
 
-closeModal.onclick = () => {
-  offerModal.style.display = 'none';
-};
-
-window.onclick = function(event) {
-  if (event.target === offerModal) offerModal.style.display = 'none';
-};
-
-offerImageInput.onchange = function() {
-  if (offerImageInput.files && offerImageInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      offerImagePreview.src = e.target.result;
-      offerImagePreview.style.display = 'block';
-    };
-    reader.readAsDataURL(offerImageInput.files[0]);
-  }
-};
-
-offerForm.onsubmit = async function(e) {
-  e.preventDefault();
-  offerFormError.textContent = '';
-  const id = offerIdInput.value;
-  const title = offerTitleInput.value.trim();
-  const description = offerDescriptionInput.value.trim();
-  const price = offerPriceInput.value.trim();
-  const validTill = offerValidTillInput.value;
-  let imageUrl = offerImagePreview.src || '';
-
-  // Upload image if a new one is selected
-  if (offerImageInput.files && offerImageInput.files[0]) {
-    const file = offerImageInput.files[0];
-    const storageRef = storage.ref().child('offers/' + Date.now() + '_' + file.name);
-    try {
-      const snapshot = await storageRef.put(file);
-      imageUrl = await snapshot.ref.getDownloadURL();
-    } catch (err) {
-      offerFormError.textContent = 'Image upload failed.';
+  // 8. Function Declarations
+  function loadOffers() {
+    console.log('Loading offers...');
+    if (!offersTableBody || !adminLoading || !adminNoOffers || !offersTableContainer) {
+      console.error('Required DOM elements not found for loading offers');
       return;
     }
+    
+    if (offersUnsubscribe) offersUnsubscribe();
+    
+    adminLoading.style.display = 'block';
+    adminNoOffers.style.display = 'none';
+    offersTableContainer.style.display = 'none';
+    
+    offersUnsubscribe = db.collection('offers').orderBy('validTill').onSnapshot(snapshot => {
+      console.log('Offers snapshot received:', snapshot.size, 'offers');
+      if (!offersTableBody) return;
+      
+      offersTableBody.innerHTML = '';
+      const offers = [];
+      
+      snapshot.forEach(doc => {
+        const offer = doc.data();
+        offer.id = doc.id;
+        offers.push(offer);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="offer-title-cell">${escapeHtml(offer.title)}</td>
+          <td class="offer-description-cell" title="${escapeHtml(offer.description)}">${escapeHtml(offer.description)}</td>
+          <td class="offer-validity-cell">${offer.validTill ? escapeHtml(offer.validTill) : 'No expiry'}</td>
+          <td>${offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('en-IN') : ''}</td>
+          <td>
+            <div class="offer-actions">
+              <button class="action-btn edit" onclick="window.editOffer('${escapeHtml(offer.id)}')">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="action-btn delete" onclick="window.deleteOffer('${escapeHtml(offer.id)}')">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+          </td>
+        `;
+        offersTableBody.appendChild(row);
+      });
+      
+      if (offersCount) {
+        offersCount.textContent = offers.length;
+      }
+      
+      adminLoading.style.display = 'none';
+      
+      if (offers.length === 0) {
+        if (adminNoOffers) adminNoOffers.style.display = 'block';
+        if (offersTableContainer) offersTableContainer.style.display = 'none';
+      } else {
+        if (adminNoOffers) adminNoOffers.style.display = 'none';
+        if (offersTableContainer) offersTableContainer.style.display = 'block';
+      }
+    }, error => {
+      console.error('Error loading offers:', error);
+      if (adminLoading) adminLoading.style.display = 'none';
+    });
   }
 
-  const offerData = { title, description, price, validTill, imageUrl };
-  try {
-    if (id) {
-      await db.collection('offers').doc(id).update(offerData);
-    } else {
-      await db.collection('offers').add(offerData);
-    }
-    offerModal.style.display = 'none';
-  } catch (err) {
-    offerFormError.textContent = 'Failed to save offer.';
+  function showAddOfferForm() {
+    console.log('Showing add offer form');
+    editingOfferId = null;
+    if (offerForm) offerForm.reset();
+    if (offerIdInput) offerIdInput.value = '';
+    if (saveBtnText) saveBtnText.textContent = 'Save Offer';
+    
+    const formTitle = document.getElementById('form-title');
+    if (formTitle) formTitle.textContent = 'Add New Offer';
+    
+    if (offerFormSection) offerFormSection.style.display = 'flex';
+    if (offerFormError) offerFormError.textContent = '';
+    
+    // Clear image inputs
+    const imageFile = document.getElementById('offer-image-file');
+    const imageUrl = document.getElementById('offer-image-url');
+    const imagePreview = document.getElementById('image-preview');
+    const removeBtn = document.getElementById('remove-image-btn');
+    
+    if (imageFile) imageFile.value = '';
+    if (imageUrl) imageUrl.value = '';
+    if (imagePreview) imagePreview.style.display = 'none';
+    if (removeBtn) removeBtn.style.display = 'none';
   }
+
+  function hideOfferForm() {
+    console.log('Hiding offer form');
+    if (offerFormSection) offerFormSection.style.display = 'none';
+    if (offerForm) offerForm.reset();
+    editingOfferId = null;
+  }
+
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    console.log('Form submitted');
+    
+    // Get form elements directly from document
+    const formOfferIdInput = document.getElementById('offer-id');
+    const formOfferTitleInput = document.getElementById('offer-title');
+    const formOfferDescriptionInput = document.getElementById('offer-description');
+    const formOfferValidityInput = document.getElementById('offer-validity');
+    const formOfferFormError = document.getElementById('offer-form-error');
+    const formOfferFormSection = document.getElementById('offer-form-section');
+    const formOfferForm = document.getElementById('offer-form');
+    
+    if (!formOfferIdInput || !formOfferTitleInput || 
+        !formOfferDescriptionInput || !formOfferValidityInput || 
+        !formOfferFormError) {
+      console.error('Required form elements not found');
+      console.log('Missing elements:', {
+        offerIdInput: !!formOfferIdInput,
+        offerTitleInput: !!formOfferTitleInput,
+        offerDescriptionInput: !!formOfferDescriptionInput,
+        offerValidityInput: !!formOfferValidityInput,
+        offerFormError: !!formOfferFormError
+      });
+      return;
+    }
+    
+    formOfferFormError.textContent = '';
+    const id = formOfferIdInput.value;
+    const title = formOfferTitleInput.value.trim();
+    const description = formOfferDescriptionInput.value.trim();
+    const validTill = formOfferValidityInput.value;
+    const imageFile = document.getElementById('offer-image-file')?.files[0];
+    const existingImageUrl = document.getElementById('offer-image-url')?.value.trim();
+    const createdAt = new Date().toISOString();
+    
+    console.log('Form data:', { title, description, validTill, hasImageFile: !!imageFile, existingImageUrl });
+    
+    if (!title || !description) {
+      if (formOfferFormError) {
+        formOfferFormError.textContent = 'Title and description are required.';
+      }
+      return;
+    }
+
+    try {
+      let imageUrl = existingImageUrl;
+      
+      // If a new image file is selected, upload it
+      if (imageFile) {
+        console.log('Uploading image file:', imageFile.name);
+        const storageRef = storage.ref();
+        const fileRef = storageRef.child(`offers/${Date.now()}_${imageFile.name}`);
+        const uploadTask = fileRef.put(imageFile);
+        
+        // Show upload progress
+        const progressBar = document.getElementById('upload-progress');
+        if (progressBar) {
+          progressBar.style.display = 'block';
+          progressBar.value = 0;
+          
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              // Progress function
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              progressBar.value = progress;
+              console.log('Upload progress:', progress + '%');
+            },
+            (error) => {
+              // Error function
+              console.error('Upload error:', error);
+              formOfferFormError.textContent = 'Failed to upload image. Please try again.';
+              if (progressBar) progressBar.style.display = 'none';
+              throw error;
+            }
+          );
+          
+          // Wait for upload to complete
+          await uploadTask;
+          imageUrl = await fileRef.getDownloadURL();
+          console.log('Image uploaded successfully:', imageUrl);
+          if (progressBar) progressBar.style.display = 'none';
+        }
+      }
+
+      const offerData = { 
+        title, 
+        description, 
+        validTill: validTill || null, 
+        imageUrl: imageUrl || null, 
+        createdAt,
+        updatedAt: new Date().toISOString()
+      };
+      
+      console.log('Saving offer data:', offerData);
+      
+      if (id) {
+        await db.collection('offers').doc(id).update(offerData);
+        console.log('Offer updated successfully');
+      } else {
+        await db.collection('offers').add(offerData);
+        console.log('Offer added successfully');
+      }
+      
+      if (formOfferFormSection) formOfferFormSection.style.display = 'none';
+      if (formOfferForm) formOfferForm.reset();
+      editingOfferId = null;
+    } catch (err) {
+      console.error('Error saving offer:', err);
+      if (formOfferFormError) {
+        formOfferFormError.textContent = 'Failed to save offer. Please try again.';
+      }
+    }
+  }
+
+  // Helper function to prevent XSS
+  function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return unsafe;
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+}
+
+// Image upload helper functions
+function showImagePreview(input) {
+  console.log('Showing image preview');
+  const preview = document.getElementById('image-preview');
+  const file = input.files[0];
+  
+  if (file) {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      const removeBtn = document.getElementById('remove-image-btn');
+      if (removeBtn) removeBtn.style.display = 'inline-block';
+    }
+    
+    reader.readAsDataURL(file);
+    const urlInput = document.getElementById('offer-image-url');
+    if (urlInput) urlInput.value = ''; // Clear URL input if file is selected
+  }
+}
+
+function removeImage() {
+  console.log('Removing image');
+  const preview = document.getElementById('image-preview');
+  if (preview) {
+    preview.src = '#';
+    preview.style.display = 'none';
+  }
+  const fileInput = document.getElementById('offer-image-file');
+  if (fileInput) fileInput.value = '';
+  const removeBtn = document.getElementById('remove-image-btn');
+  if (removeBtn) removeBtn.style.display = 'none';
+}
+
+function clearFileInput() {
+  console.log('Clearing file input');
+  const fileInput = document.getElementById('offer-image-file');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('image-preview');
+  if (preview) preview.style.display = 'none';
+  const removeBtn = document.getElementById('remove-image-btn');
+  if (removeBtn) removeBtn.style.display = 'none';
+}
+
+// Make functions available globally
+window.showImagePreview = showImagePreview;
+window.removeImage = removeImage;
+window.clearFileInput = clearFileInput;
+
+// 9. Global functions for inline event handlers
+window.editOffer = function(id) {
+  console.log('Editing offer:', id);
+  const db = firebase.firestore();
+  const offerIdInput = document.getElementById('offer-id');
+  const offerTitleInput = document.getElementById('offer-title');
+  const offerDescriptionInput = document.getElementById('offer-description');
+  const offerValidityInput = document.getElementById('offer-validity');
+  const saveBtnText = document.getElementById('save-btn-text');
+  const offerFormSection = document.getElementById('offer-form-section');
+  const offerFormError = document.getElementById('offer-form-error');
+  const formTitle = document.getElementById('form-title');
+
+  if (!id || !db || !offerIdInput || !offerTitleInput || !offerDescriptionInput || 
+      !offerValidityInput || !saveBtnText || 
+      !offerFormSection || !offerFormError || !formTitle) {
+    console.error('Required elements not found for editing offer');
+    return;
+  }
+
+  db.collection('offers').doc(id).get().then(doc => {
+    if (!doc.exists) {
+      console.error('Offer not found');
+      return;
+    }
+
+    const offer = doc.data();
+    window.editingOfferId = id;
+    
+    offerIdInput.value = id;
+    offerTitleInput.value = offer.title || '';
+    offerDescriptionInput.value = offer.description || '';
+    offerValidityInput.value = offer.validTill || '';
+    
+    // Handle image URL
+    const imageUrlInput = document.getElementById('offer-image-url');
+    if (imageUrlInput && offer.imageUrl) {
+      imageUrlInput.value = offer.imageUrl;
+    }
+    
+    saveBtnText.textContent = 'Update Offer';
+    formTitle.textContent = 'Edit Offer';
+    offerFormSection.style.display = 'flex';
+    offerFormError.textContent = '';
+    
+    console.log('Offer loaded for editing:', offer);
+  }).catch(error => {
+    console.error('Error loading offer:', error);
+  });
 };
 
-class AdminDashboard {
-    constructor() {
-        this.offers = [];
-        this.currentEditingOffer = null;
-        this.init();
-    }
+window.deleteOffer = function(id) {
+  console.log('Deleting offer:', id);
+  if (!id || !window.confirm('Are you sure you want to delete this offer?')) {
+    return;
+  }
 
-    async init() {
-        this.checkAuth();
-        await this.loadOffers();
-        this.setupEventListeners();
-        this.renderOffers();
-    }
+  const db = firebase.firestore();
+  db.collection('offers').doc(id).delete()
+    .then(() => {
+      console.log('Offer deleted successfully');
+    })
+    .catch(error => {
+      console.error('Error deleting offer:', error);
+      alert('Failed to delete offer. Please try again.');
+    });
+};
 
-    checkAuth() {
-        const isLoggedIn = sessionStorage.getItem('bhajarang_admin_auth');
-        if (isLoggedIn !== 'true') {
-            window.location.href = 'admin.html';
-            return;
-        }
-    }
-
-    setupEventListeners() {
-        // Add offer button
-        document.getElementById('add-offer-btn').addEventListener('click', () => {
-            this.showOfferForm();
-        });
-
-        // Form close buttons
-        document.getElementById('close-form-btn').addEventListener('click', () => {
-            this.hideOfferForm();
-        });
-        document.getElementById('cancel-form-btn').addEventListener('click', () => {
-            this.hideOfferForm();
-        });
-
-        // Form submission
-        document.getElementById('offer-form').addEventListener('submit', (e) => {
-            this.handleFormSubmit(e);
-        });
-
-        // Modal close buttons
-        document.getElementById('close-modal-btn').addEventListener('click', () => {
-            this.hideDeleteModal();
-        });
-        document.getElementById('cancel-delete-btn').addEventListener('click', () => {
-            this.hideDeleteModal();
-        });
-        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
-            this.confirmDelete();
-        });
-
-        // Close form/modal on outside click
-        document.getElementById('offer-form-section').addEventListener('click', (e) => {
-            if (e.target.id === 'offer-form-section') {
-                this.hideOfferForm();
-            }
-        });
-
-        document.getElementById('delete-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'delete-modal') {
-                this.hideDeleteModal();
-            }
-        });
-    }
-
-    async loadOffers() {
-        try {
-            // Check if we're on live site (has domain) or local (file:// or localhost)
-            const isLive = window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
-            
-            if (isLive) {
-                // Live site - use Vercel API
-                const response = await fetch('/api/offers');
-                const data = await response.json();
-                this.offers = data.offers || [];
-            } else {
-                // Local development - use localStorage
-                const storedOffers = localStorage.getItem('bhajarang_offers');
-                this.offers = storedOffers ? JSON.parse(storedOffers) : [];
-            }
-        } catch (error) {
-            console.error('Error loading offers:', error);
-            // Fallback to localStorage
-            const storedOffers = localStorage.getItem('bhajarang_offers');
-            this.offers = storedOffers ? JSON.parse(storedOffers) : [];
-        }
-    }
-
-    async saveOffers() {
-        try {
-            // Check if we're on live site (has domain) or local (file:// or localhost)
-            const isLive = window.location.protocol === 'https:' && !window.location.hostname.includes('localhost');
-            
-            if (isLive) {
-                // Live site - use Vercel API
-                const response = await fetch('/api/offers', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ offers: this.offers })
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    this.showMessage('Offers updated successfully! Changes are live across all devices.', 'success');
-                } else {
-                    throw new Error(result.message || 'Failed to save offers');
-                }
-            } else {
-                // Local development - use localStorage
-                localStorage.setItem('bhajarang_offers', JSON.stringify(this.offers));
-                this.showMessage('Offers updated successfully!', 'success');
-            }
-        } catch (error) {
-            console.error('Error saving offers:', error);
-            // Fallback to localStorage
-            localStorage.setItem('bhajarang_offers', JSON.stringify(this.offers));
-            this.showMessage('Saved locally. May not sync across devices.', 'error');
-        }
-    }
-
-    renderOffers() {
-        const loadingEl = document.getElementById('admin-loading');
-        const noOffersEl = document.getElementById('admin-no-offers');
-        const tableEl = document.getElementById('offers-table-container');
-        const countEl = document.getElementById('offers-count');
-
-        // Show loading initially
-        loadingEl.style.display = 'block';
-        noOffersEl.style.display = 'none';
-        tableEl.style.display = 'none';
-
-        setTimeout(() => {
-            loadingEl.style.display = 'none';
-            countEl.textContent = this.offers.length;
-
-            if (this.offers.length === 0) {
-                noOffersEl.style.display = 'block';
-            } else {
-                tableEl.style.display = 'block';
-                this.renderOffersTable();
-            }
-        }, 500);
-    }
-
-    renderOffersTable() {
-        const tbody = document.getElementById('offers-table-body');
-        tbody.innerHTML = '';
-
-        this.offers.forEach(offer => {
-            const row = this.createOfferRow(offer);
-            tbody.appendChild(row);
-        });
-    }
-
-    createOfferRow(offer) {
-        const row = document.createElement('tr');
-        const isExpired = this.isExpired(offer.validity);
-        
-        row.innerHTML = `
-            <td class="offer-title-cell">${offer.title}</td>
-            <td class="offer-description-cell" title="${offer.description}">
-                ${offer.description}
-            </td>
-            <td class="offer-validity-cell ${isExpired ? 'expired' : 'active'}">
-                ${offer.validity ? 
-                    (isExpired ? 'Expired' : this.formatDate(offer.validity)) : 
-                    'No expiry'
-                }
-            </td>
-            <td>${this.formatDate(offer.createdAt.split('T')[0])}</td>
-            <td>
-                <div class="offer-actions">
-                    <button class="action-btn edit" onclick="adminDashboard.editOffer('${offer.id}')">
-                        <i class="fas fa-edit"></i>
-                        Edit
-                    </button>
-                    <button class="action-btn delete" onclick="adminDashboard.deleteOffer('${offer.id}')">
-                        <i class="fas fa-trash"></i>
-                        Delete
-                    </button>
-                </div>
-            </td>
-        `;
-
-        return row;
-    }
-
-    showOfferForm(offer = null) {
-        this.currentEditingOffer = offer;
-        const formSection = document.getElementById('offer-form-section');
-        const formTitle = document.getElementById('form-title');
-        const saveBtn = document.getElementById('save-btn-text');
-        const form = document.getElementById('offer-form');
-
-        if (offer) {
-            formTitle.textContent = 'Edit Offer';
-            saveBtn.textContent = 'Update Offer';
-            this.populateForm(offer);
-        } else {
-            formTitle.textContent = 'Add New Offer';
-            saveBtn.textContent = 'Save Offer';
-            form.reset();
-        }
-
-        formSection.style.display = 'flex';
-        document.getElementById('offer-title').focus();
-    }
-
-    hideOfferForm() {
-        document.getElementById('offer-form-section').style.display = 'none';
-        document.getElementById('offer-form').reset();
-        this.currentEditingOffer = null;
-    }
-
-    populateForm(offer) {
-        document.getElementById('offer-id').value = offer.id;
-        document.getElementById('offer-title').value = offer.title;
-        document.getElementById('offer-description').value = offer.description;
-        document.getElementById('offer-validity').value = offer.validity || '';
-        document.getElementById('offer-image').value = offer.image || '';
-    }
-
-    handleFormSubmit(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const offerData = {
-            id: formData.get('id') || this.generateId(),
-            title: formData.get('title').trim(),
-            description: formData.get('description').trim(),
-            validity: formData.get('validity') || null,
-            image: formData.get('image').trim() || null,
-            createdAt: this.currentEditingOffer ? this.currentEditingOffer.createdAt : new Date().toISOString()
-        };
-
-        // Validation
-        if (!offerData.title || !offerData.description) {
-            this.showMessage('Please fill in all required fields.', 'error');
-            return;
-        }
-
-        if (offerData.validity && this.isExpired(offerData.validity)) {
-            const proceed = confirm('The validity date is in the past. Do you want to continue?');
-            if (!proceed) return;
-        }
-
-        // Save offer
-        if (this.currentEditingOffer) {
-            // Update existing offer
-            const index = this.offers.findIndex(o => o.id === offerData.id);
-            if (index !== -1) {
-                this.offers[index] = offerData;
-            }
-        } else {
-            // Add new offer
-            this.offers.unshift(offerData);
-        }
-
-        this.saveOffers();
-        this.renderOffers();
-        this.hideOfferForm();
-    }
-
-    editOffer(offerId) {
-        const offer = this.offers.find(o => o.id === offerId);
-        if (offer) {
-            this.showOfferForm(offer);
-        }
-    }
-
-    deleteOffer(offerId) {
-        const offer = this.offers.find(o => o.id === offerId);
-        if (offer) {
-            document.getElementById('delete-offer-title').textContent = offer.title;
-            document.getElementById('delete-modal').style.display = 'flex';
-            this.offerToDelete = offerId;
-        }
-    }
-
-    hideDeleteModal() {
-        document.getElementById('delete-modal').style.display = 'none';
-        this.offerToDelete = null;
-    }
-
-    confirmDelete() {
-        if (this.offerToDelete) {
-            this.offers = this.offers.filter(o => o.id !== this.offerToDelete);
-            this.saveOffers();
-            this.renderOffers();
-            this.hideDeleteModal();
-        }
-    }
-
-    generateId() {
-        return 'offer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    isExpired(validityDate) {
-        if (!validityDate) return false;
-        const today = new Date();
-        const validity = new Date(validityDate);
-        return validity < today;
-    }
-
-    formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        });
-    }
-
-    showMessage(text, type = 'success') {
-        const messageEl = document.getElementById('admin-message');
-        const iconEl = document.getElementById('message-icon');
-        const textEl = document.getElementById('message-text');
-
-        // Set content
-        textEl.textContent = text;
-        
-        // Set type
-        messageEl.className = `admin-message ${type}`;
-        iconEl.className = type === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle';
-
-        // Show message
-        messageEl.style.display = 'block';
-
-        // Auto hide after 4 seconds
-        setTimeout(() => {
-            messageEl.style.display = 'none';
-        }, 4000);
-    }
-}
-
-// Logout function
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.removeItem('bhajarang_admin_auth');
-        window.location.href = 'admin.html';
-    }
-}
-
-// Global variable for access from HTML onclick handlers
-let adminDashboard;
-
-// Initialize admin dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    adminDashboard = new AdminDashboard();
-});
-
-// Prevent back button after logout
-window.addEventListener('beforeunload', () => {
-    // Clear any unsaved form data
-});
-
-// Auto-save form data on input (optional enhancement)
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('offer-form');
-    if (form) {
-        const inputs = form.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            input.addEventListener('input', () => {
-                // Could implement auto-save draft functionality here
-            });
-        });
-    }
-});
+window.logout = function() {
+  console.log('Logging out');
+  const auth = firebase.auth();
+  auth.signOut().catch(error => {
+    console.error('Error signing out:', error);
+  });
+};

@@ -119,13 +119,30 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="offer-image">
-                                <i class="fas fa-image"></i>
-                                Offer Image URL (Optional)
+                            <label for="offer-image-file">
+                                <i class="fas fa-upload"></i>
+                                Upload Image (Optional)
                             </label>
-                            <input type="url" id="offer-image" name="image" 
-                                   placeholder="https://example.com/offer-image.jpg">
-                            <small>Tip: Upload image to a free service like imgur.com and paste the URL here</small>
+                            <input type="file" id="offer-image-file" accept="image/*" onchange="showImagePreview(this)">
+                            <progress id="upload-progress" value="0" max="100" style="width: 100%; display: none; margin-top: 10px;"></progress>
+                            
+                            <div style="margin: 15px 0; text-align: center;">
+                                <img id="image-preview" src="#" alt="Preview" style="max-width: 200px; max-height: 200px; display: none; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; padding: 5px; background: #f8f9fa;">
+                                <br>
+                                <button type="button" id="remove-image-btn" onclick="removeImage()" style="display: none; margin: 5px 0; background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-times"></i> Remove Image
+                                </button>
+                            </div>
+                            
+                            <div style="text-align: center; margin: 15px 0; font-weight: bold; color: #666;">OR</div>
+                            
+                            <label for="offer-image-url">
+                                <i class="fas fa-link"></i>
+                                Or Enter Image URL
+                            </label>
+                            <input type="url" id="offer-image-url" name="image-url" 
+                                   placeholder="https://example.com/image.jpg" oninput="clearFileInput()">
+                            <small>Upload an image file or paste a direct image URL</small>
                         </div>
 
                         <div class="form-actions">
