@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +9,13 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <i class="fas fa-mobile-alt"></i>
-                <span>Jai Bhajarang Mobiles</span>
+                <img src="logo.png" alt="Jai Bhajarang Mobiles Logo" class="logo-img">
             </div>
             <div class="nav-menu" id="nav-menu">
                 <a href="index.html" class="nav-link">Home</a>
@@ -37,7 +38,8 @@
         <div class="hero-container">
             <div class="hero-content">
                 <h1 class="hero-title">🎉 Special Offers & Deals</h1>
-                <p class="hero-subtitle">Don't miss out on our amazing deals and exclusive offers on mobile repairs and accessories!</p>
+                <p class="hero-subtitle">Don't miss out on our amazing deals and exclusive offers on mobile repairs and
+                    accessories!</p>
                 <a href="contact.html" class="cta-button">
                     <i class="fas fa-phone"></i>
                     Contact Us for More Details
@@ -60,7 +62,7 @@
         <div class="container">
             <h2>Current Offers</h2>
             <p class="section-subtitle">Limited time deals you don't want to miss!</p>
-            
+
             <!-- Loading State -->
             <div id="offers-loading" class="offers-loading">
                 <i class="fas fa-spinner fa-spin"></i>
@@ -92,7 +94,8 @@
                 <h2>Want to Know About New Offers?</h2>
                 <p>Contact us to stay updated on the latest deals and exclusive offers</p>
                 <div class="cta-buttons">
-                    <a href="https://wa.me/919515397690?text=Hi! I would like to know about your current offers and deals." class="cta-button" target="_blank">
+                    <a href="https://wa.me/919515397690?text=Hi! I would like to know about your current offers and deals."
+                        class="cta-button" target="_blank">
                         <i class="fab fa-whatsapp"></i>
                         WhatsApp Us
                     </a>
@@ -110,8 +113,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-logo">
-                    <i class="fas fa-mobile-alt"></i>
-                    <span>Jai Bhajarang Mobiles</span>
+                    <img src="logo.png" alt="Jai Bhajarang Mobiles Logo" class="logo-img">
                 </div>
                 <div class="footer-links">
                     <a href="index.html">Home</a>
@@ -132,25 +134,27 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
+
     <!-- Firebase Configuration -->
     <script>
         const firebaseConfig = {
-          apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
-          authDomain: "bhajarang-offers.firebaseapp.com",
-          projectId: "bhajarang-offers",
-          messagingSenderId: "585545255878",
-          appId: "1:585545255878:web:bc728387d933b1fed540c7",
-          measurementId: "G-29J69VBDVH"
+            apiKey: "AIzaSyBnvVzRwCzwGdPzInwC1J1b2MpVh_zQlew",
+            authDomain: "bhajarang-offers.firebaseapp.com",
+            projectId: "bhajarang-offers",
+            messagingSenderId: "585545255878",
+            appId: "1:585545255878:web:bc728387d933b1fed540c7",
+            measurementId: "G-29J69VBDVH"
         };
-        
+
         // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
+
     </script>
-    
+
     <script src="script.js"></script>
     <script src="offers.js"></script>
 </body>
+
 </html>

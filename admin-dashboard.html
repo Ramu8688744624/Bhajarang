@@ -1,66 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Dashboard - Jai Bhajarang Mobiles</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  
-  <!-- Cloudinary Upload Widget -->
-  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Jai Bhajarang Mobiles</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- Cloudinary Upload Widget -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-  <!-- Navigation -->
-  <nav class="navbar">
-      <div class="nav-container">
-          <div class="nav-logo">
-              <i class="fas fa-mobile-alt"></i>
-              <span>Jai Bhajarang Mobiles</span>
-          </div>
-          <div class="nav-menu" id="nav-menu">
-              <a href="index.html" class="nav-link">Home</a>
-              <a href="offers.html" class="nav-link">View Offers</a>
-              <a href="#" class="nav-link" onclick="logout()">
-                  <i class="fas fa-sign-out-alt"></i>
-                  Logout
-              </a>
-          </div>
-          <div class="nav-toggle" id="nav-toggle">
-              <span class="bar"></span>
-              <span class="bar"></span>
-              <span class="bar"></span>
-          </div>
-      </div>
-  </nav>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo.png" alt="Jai Bhajarang Mobiles Logo" class="logo-img">
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="offers.html" class="nav-link">View Offers</a>
+                <a href="#" class="nav-link" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
 
-  <!-- Admin Header -->
-  <section class="admin-header">
-      <div class="container">
-          <div class="admin-title">
-              <i class="fas fa-tachometer-alt"></i>
-              <h1>Admin Dashboard</h1>
-              <p>Manage offers and deals for Jai Bhajarang Mobiles</p>
-          </div>
-          <div class="admin-actions">
-              <button id="add-offer-btn" class="admin-btn primary">
-                  <i class="fas fa-plus"></i>
-                  Add New Offer
-              </button>
-              <a href="offers.html" class="admin-btn secondary" target="_blank">
-                  <i class="fas fa-eye"></i>
-                  Preview Offers Page
-              </a>
-          </div>
-      </div>
-  </section>
+    <!-- Admin Header -->
+    <section class="admin-header">
+        <div class="container">
+            <div class="admin-title">
+                <i class="fas fa-tachometer-alt"></i>
+                <h1>Admin Dashboard</h1>
+                <p>Manage offers and deals for Jai Bhajarang Mobiles</p>
+            </div>
+            <div class="admin-actions">
+                <button id="add-offer-btn" class="admin-btn primary">
+                    <i class="fas fa-plus"></i>
+                    Add New Offer
+                </button>
+                <a href="offers.html" class="admin-btn secondary" target="_blank">
+                    <i class="fas fa-eye"></i>
+                    Preview Offers Page
+                </a>
+            </div>
+        </div>
+    </section>
 
-  <!-- Offers Management -->
+    <!-- Offers Management -->
     <section class="admin-content">
         <div class="container">
             <!-- Add/Edit Offer Form -->
@@ -75,15 +76,15 @@
 
                     <form id="offer-form" class="offer-form">
                         <input type="hidden" id="offer-id" name="id">
-                        
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="offer-title">
                                     <i class="fas fa-heading"></i>
                                     Offer Title *
                                 </label>
-                                <input type="text" id="offer-title" name="title" required 
-                                       placeholder="e.g., 20% Off Screen Replacement">
+                                <input type="text" id="offer-title" name="title" required
+                                    placeholder="e.g., 20% Off Screen Replacement">
                             </div>
 
                             <div class="form-group">
@@ -101,7 +102,7 @@
                                 Description *
                             </label>
                             <textarea id="offer-description" name="description" required rows="4"
-                                      placeholder="Describe the offer details, terms, and conditions..."></textarea>
+                                placeholder="Describe the offer details, terms, and conditions..."></textarea>
                         </div>
 
                         <div class="form-group">
@@ -110,29 +111,33 @@
                                 Upload Image (Optional)
                             </label>
                             <input type="file" id="offer-image-file" accept="image/*" onchange="showImagePreview(this)">
-                            <progress id="upload-progress" value="0" max="100" style="width: 100%; display: none; margin-top: 10px;"></progress>
-                            
+                            <progress id="upload-progress" value="0" max="100"
+                                style="width: 100%; display: none; margin-top: 10px;"></progress>
+
                             <div style="margin: 15px 0; text-align: center;">
-                                <img id="image-preview" src="#" alt="Preview" style="max-width: 200px; max-height: 200px; display: none; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; padding: 5px; background: #f8f9fa;">
+                                <img id="image-preview" src="#" alt="Preview"
+                                    style="max-width: 200px; max-height: 200px; display: none; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; padding: 5px; background: #f8f9fa;">
                                 <br>
-                                <button type="button" id="remove-image-btn" onclick="removeImage()" style="display: none; margin: 5px 0; background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                <button type="button" id="remove-image-btn" onclick="removeImage()"
+                                    style="display: none; margin: 5px 0; background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
                                     <i class="fas fa-times"></i> Remove Image
                                 </button>
                             </div>
-                            
+
                             <div style="text-align: center; margin: 15px 0; font-weight: bold; color: #666;">OR</div>
-                            
+
                             <label for="offer-image-url">
                                 <i class="fas fa-link"></i>
                                 Or Enter Image URL
                             </label>
-                            <input type="url" id="offer-image-url" name="image-url" 
-                                   placeholder="https://example.com/image.jpg" oninput="clearFileInput()">
+                            <input type="url" id="offer-image-url" name="image-url"
+                                placeholder="https://example.com/image.jpg" oninput="clearFileInput()">
                             <small>Upload an image file or paste a direct image URL</small>
                         </div>
 
                         <!-- Form Error Message -->
-                        <div id="offer-form-error" class="form-error" style="display: none; background: #fee; border: 1px solid #fcc; color: #c33; padding: 10px; border-radius: 4px; margin: 15px 0;">
+                        <div id="offer-form-error" class="form-error"
+                            style="display: none; background: #fee; border: 1px solid #fcc; color: #c33; padding: 10px; border-radius: 4px; margin: 15px 0;">
                             <i class="fas fa-exclamation-triangle"></i>
                             <span id="offer-form-error-text">Please fill in all required fields.</span>
                         </div>
@@ -232,4 +237,5 @@
     <script src="script.js"></script>
     <script src="admin-dashboard.js"></script>
 </body>
+
 </html>
