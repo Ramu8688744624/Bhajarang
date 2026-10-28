@@ -280,3 +280,254 @@ window.addEventListener('load', function() {
         }
     });
 });
+/* ========================================================
+   JAI BHAJARANG MOBILES - GLOBAL AI ASSISTANT WIDGET
+   ======================================================== */
+(function() {
+  // 1. Inject Styles dynamically with Slate/Navy high-contrast palette
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #jb-chat-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      height: 52px;
+      padding: 0 20px;
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 30px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      z-index: 999999;
+      transition: all 0.25s ease;
+    }
+    #jb-chat-btn:hover {
+      transform: translateY(-2px);
+      background: #1e293b;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+    }
+    .jb-btn-pulse {
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+    }
+
+    #jb-chat-window {
+      position: fixed;
+      bottom: 88px;
+      right: 24px;
+      width: 375px;
+      max-width: calc(100vw - 32px);
+      height: 530px;
+      max-height: 80vh;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 999999;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      border: 1px solid #e2e8f0;
+      animation: jbPop 0.25s ease-out;
+    }
+    @keyframes jbPop {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    #jb-chat-header {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .jb-h-left { display: flex; align-items: center; gap: 10px; }
+    .jb-avatar-box {
+      width: 36px;
+      height: 36px;
+      background: #dc2626;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .jb-h-title { font-size: 15px; font-weight: 700; }
+    .jb-h-sub { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 5px; }
+    .jb-h-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; }
+
+    #jb-chat-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    #jb-chat-close:hover { color: #ffffff; }
+
+    #jb-chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f8fafc;
+    }
+
+    .jb-bubble {
+      max-width: 82%;
+      padding: 11px 15px;
+      border-radius: 14px;
+      line-height: 1.45;
+      font-size: 13.5px;
+      word-break: break-word;
+    }
+    .jb-bot {
+      background: #ffffff;
+      color: #1e293b;
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .jb-user {
+      background: #0f172a;
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+
+    #jb-chat-input-bar {
+      display: flex;
+      padding: 12px;
+      background: #ffffff;
+      border-top: 1px solid #f1f5f9;
+      gap: 8px;
+    }
+    #jb-chat-input {
+      flex: 1;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 24px;
+      padding: 10px 16px;
+      outline: none;
+      font-size: 13.5px;
+    }
+    #jb-chat-input:focus { border-color: #0f172a; }
+    #jb-chat-send {
+      background: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    #jb-chat-send:hover { background: #334155; }
+  `;
+  document.head.appendChild(style);
+
+  // 2. Inject HTML UI
+  const widgetContainer = document.createElement("div");
+  widgetContainer.innerHTML = `
+    <button id="jb-chat-btn" onclick="toggleJbWidget()" aria-label="Open AI Assistant">
+      <span class="jb-btn-pulse"></span>
+      <span>💬 Assistant</span>
+    </button>
+
+    <div id="jb-chat-window">
+      <div id="jb-chat-header">
+        <div class="jb-h-left">
+          <div class="jb-avatar-box">JB</div>
+          <div>
+            <div class="jb-h-title">Jai Bhajarang Assistant</div>
+            <div class="jb-h-sub"><span class="jb-h-dot"></span> Online | Karimnagar</div>
+          </div>
+        </div>
+        <button id="jb-chat-close" onclick="toggleJbWidget()">✕</button>
+      </div>
+
+      <div id="jb-chat-messages">
+        <div class="jb-bubble jb-bot">
+          Namaste! 🙏 Welcome to Jai Bhajarang Mobiles.<br><br>
+          Accessories, display repair, battery ledha doorstep service gurinchi adagandi — I'm here to help!
+        </div>
+      </div>
+
+      <div id="jb-chat-input-bar">
+        <input type="text" id="jb-chat-input" placeholder="Ask in English or Telugu..." onkeypress="handleJbKey(event)" />
+        <button id="jb-chat-send" onclick="sendJbChat()">➔</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(widgetContainer);
+
+  // 3. Helper Functions
+  window.toggleJbWidget = function() {
+    const win = document.getElementById("jb-chat-window");
+    const isVisible = win.style.display === "flex";
+    win.style.display = isVisible ? "none" : "flex";
+    if (!isVisible) document.getElementById("jb-chat-input").focus();
+  };
+
+  window.handleJbKey = function(e) {
+    if (e.key === "Enter") sendJbChat();
+  };
+
+  window.sendJbChat = async function() {
+    const input = document.getElementById("jb-chat-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const messages = document.getElementById("jb-chat-messages");
+
+    // Add User Message
+    const userBubble = document.createElement("div");
+    userBubble.className = "jb-bubble jb-user";
+    userBubble.innerText = text;
+    messages.appendChild(userBubble);
+    input.value = "";
+    messages.scrollTop = messages.scrollHeight;
+
+    // Add Loading Indicator
+    const botBubble = document.createElement("div");
+    botBubble.className = "jb-bubble jb-bot";
+    botBubble.innerText = "Checking inventory & services...";
+    messages.appendChild(botBubble);
+    messages.scrollTop = messages.scrollHeight;
+
+    try {
+      const res = await fetch("https://bhajarang-ai-backend.onrender.com/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      botBubble.innerText = data.reply || "Sorry, no response received.";
+    } catch (err) {
+      botBubble.innerText = "Server is waking up, please try in 10 seconds!";
+    }
+    messages.scrollTop = messages.scrollHeight;
+  };
+})();
