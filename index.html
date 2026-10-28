@@ -334,6 +334,172 @@
     </footer>
 
     <script src="script.js"></script>
+    <!-- Jai Bhajarang Mobiles AI Assistant Widget -->
+<style>
+  #jb-chat-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    background: #2563eb;
+    color: white;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    z-index: 99999;
+    transition: transform 0.2s ease;
+  }
+  #jb-chat-btn:hover { transform: scale(1.08); }
+  #jb-chat-window {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    width: 360px;
+    max-width: 90vw;
+    height: 500px;
+    max-height: 80vh;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 99999;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  #jb-chat-header {
+    background: #1e40af;
+    color: white;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  #jb-chat-close { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+  #jb-chat-messages {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8fafc;
+    font-size: 14px;
+  }
+  .jb-msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    line-height: 1.4;
+  }
+  .jb-msg-bot {
+    background: #e2e8f0;
+    color: #0f172a;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+  }
+  .jb-msg-user {
+    background: #2563eb;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+  }
+  #jb-chat-input-bar {
+    display: flex;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    gap: 8px;
+  }
+  #jb-chat-input {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 8px 14px;
+    outline: none;
+    font-size: 14px;
+  }
+  #jb-chat-send {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+</style>
+
+<button id="jb-chat-btn" onclick="toggleJbChat()">💬</button>
+
+<div id="jb-chat-window">
+  <div id="jb-chat-header">
+    <span>Jai Bhajarang AI Assistant</span>
+    <button id="jb-chat-close" onclick="toggleJbChat()">✕</button>
+  </div>
+  <div id="jb-chat-messages">
+    <div class="jb-msg jb-msg-bot">Namaste! How can I help you with mobile accessories or repairs today?</div>
+  </div>
+  <div id="jb-chat-input-bar">
+    <input type="text" id="jb-chat-input" placeholder="Ask about items or repairs..." onkeypress="handleJbEnter(event)" />
+    <button id="jb-chat-send" onclick="sendJbMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  function toggleJbChat() {
+    const win = document.getElementById("jb-chat-window");
+    win.style.display = (win.style.display === "flex") ? "none" : "flex";
+  }
+
+  function handleJbEnter(e) {
+    if (e.key === "Enter") sendJbMessage();
+  }
+
+  async function sendJbMessage() {
+    const input = document.getElementById("jb-chat-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const msgContainer = document.getElementById("jb-chat-messages");
+    
+    // Append User Message
+    const userDiv = document.createElement("div");
+    userDiv.className = "jb-msg jb-msg-user";
+    userDiv.innerText = text;
+    msgContainer.appendChild(userDiv);
+    input.value = "";
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    // Append Loading Placeholder
+    const botDiv = document.createElement("div");
+    botDiv.className = "jb-msg jb-msg-bot";
+    botDiv.innerText = "Checking inventory...";
+    msgContainer.appendChild(botDiv);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    try {
+      const res = await fetch("https://bhajarang-ai-backend.onrender.com/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      botDiv.innerText = data.reply || "Sorry, I could not fetch a response.";
+    } catch (err) {
+      botDiv.innerText = "Error reaching shop server. Please try again.";
+    }
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+</script>
 </body>
 
 </html>
