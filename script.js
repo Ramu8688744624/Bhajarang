@@ -445,6 +445,25 @@ window.addEventListener('load', function() {
       transition: background 0.2s;
     }
     #jb-chat-send:hover { background: #334155; }
+
+    @media (max-width: 480px) {
+      #jb-chat-window {
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+      }
+      #jb-chat-btn {
+        bottom: 16px;
+        right: 16px;
+        padding: 0 16px;
+        height: 46px;
+        font-size: 13.5px;
+      }
+    }
   `;
   document.head.appendChild(style);
 
