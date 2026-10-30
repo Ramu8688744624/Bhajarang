@@ -289,10 +289,10 @@ window.addEventListener('load', function() {
   style.innerHTML = `
     #jb-chat-btn {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      height: 52px;
-      padding: 0 20px;
+      bottom: 20px;
+      right: 20px;
+      height: 50px;
+      padding: 0 18px;
       background: #0f172a;
       color: #ffffff;
       border-radius: 30px;
@@ -302,7 +302,7 @@ window.addEventListener('load', function() {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       z-index: 999999;
@@ -323,12 +323,12 @@ window.addEventListener('load', function() {
 
     #jb-chat-window {
       position: fixed;
-      bottom: 88px;
-      right: 24px;
-      width: 375px;
+      bottom: 80px;
+      right: 20px;
+      width: 360px;
       max-width: calc(100vw - 32px);
-      height: 530px;
-      max-height: 80vh;
+      height: 520px;
+      max-height: 75vh;
       background: #ffffff;
       border-radius: 18px;
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
@@ -445,25 +445,6 @@ window.addEventListener('load', function() {
       transition: background 0.2s;
     }
     #jb-chat-send:hover { background: #334155; }
-
-    @media (max-width: 480px) {
-      #jb-chat-window {
-        width: 100vw;
-        height: 100vh;
-        max-width: 100vw;
-        max-height: 100vh;
-        bottom: 0;
-        right: 0;
-        border-radius: 0;
-      }
-      #jb-chat-btn {
-        bottom: 16px;
-        right: 16px;
-        padding: 0 16px;
-        height: 46px;
-        font-size: 13.5px;
-      }
-    }
   `;
   document.head.appendChild(style);
 
